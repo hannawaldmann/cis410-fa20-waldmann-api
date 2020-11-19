@@ -1,0 +1,8 @@
+{
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ],
+    "appService.defaultWebAppToDeploy": "/subscriptions/f288a6a8-07a9-4765-91d4-e7df3fd46832/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/cis410-fa20-waldmann-api",
+    "appService.deploySubpath": "."
+}
