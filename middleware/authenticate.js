@@ -16,14 +16,14 @@ const auth = async(req,res,next)=>{
         let customerPK = decodedToken.pk;
         console.log(customerPK)
         //2.compare token to db token
-        let query = `SELECT CustomerPK, NameFirst, NameLast, Email
+        let query = `SELECT CustomerPK, FirstName, LastName, Email
         FROM Customer
         WHERE CustomerPK = ${customerPK} and Token = '${myToken}'`
 
         let returnedUser = await db.executeQuery(query)
         // console.log(returnedUser)
         if(returnedUser[0]){
-            req.customer = returnedUser[0]
+            req.Customer = returnedUser[0]
             next()
         }
         else(res.status(401).send('Authentication failed.'))

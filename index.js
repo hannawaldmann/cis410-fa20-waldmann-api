@@ -4,10 +4,11 @@ const jwt = require('jsonwebtoken')
 const cors = require('cors')
 
 const db = require('./dbConnectExec.js');
-const auth = require(("./middleware/authenticate"))
+const config = require('./config.js')
+const auth = require("./middleware/authenticate")
 
-const { response } = require('express');
-const dbConnectExec = require('./dbConnectExec.js');
+// const { response } = require('express');
+// const dbConnectExec = require('./dbConnectExec.js');
 
 //azurewebsites.net, colostate.edu
 const app = express();
@@ -17,16 +18,30 @@ app.use(cors());
 app.get('/customer/me', auth, (req,res)=>{
     res.send(req.customer)
 
-    var email = req.body.email;
-    var password = req.body.password;
+    // var firstName = req.body.FirstName
+    // var lastName = req.body.LastName
+    // var email= req.body.email;
+    // var password = req.body.password;
+    
+    // if(!firstName || !lastName || !email || !password){res.status(400).send("bad request")}
 
-    if(!email || !password){res.status(400).send("bad request")}
+    // res.send("response")
+})
 
-    res.send("response")
+app.post('/customer/logout', auth, (req,res) => {
+    var query = `UPDATE Customer
+    SET Token = NULL 
+    WHERE ContactPK = ${req.contact.ContactPK}`
+
+    db.executeQuery(query)
+    .then(()=>{res.status(200).send()})
+    .catch((error)=>{console.log("error in POST /customer/logout", error)
+    res.status(500).send()
+})
 })
 
 app.post("/customer/login", async (req, res)=>{
-    // console.log(req.body)
+    //  console.log(req.body)
     
     var email= req.body.email;
     var password = req.body.password;
@@ -40,7 +55,7 @@ app.post("/customer/login", async (req, res)=>{
     FROM Customer
     WHERE Email = '${email}'`
     
-    // var result = await db.executeQuery(query);
+    //var result = await db.executeQuery(query);
     let result;
     
     try{
@@ -57,10 +72,10 @@ app.post("/customer/login", async (req, res)=>{
     //2. check that their password matches
     
     let user = result[0]
-    // console.log(user)
+    console.log(user)
     
     if(!bcrypt.compareSync(password, user.Password)){
-        console.log("invalid password")
+        console.log("invalid password");
         return res.status(400).send("Invalid user credentials")
     }
     
@@ -80,8 +95,8 @@ app.post("/customer/login", async (req, res)=>{
     res.status(200).send({
         token: token, 
         user: {
-            nameFirst: user.NameFirst,
-            nameLast: user.NameLast,
+            firstName: user.FirstName,
+            lastName: user.LastName,
             email: user.Email,
             customerPK: user.CustomerPK
         }
@@ -95,36 +110,36 @@ app.post("/customer/login", async (req, res)=>{
     })
     
     app.post("/customer", async(req,res)=>{
-        // res.send("creating user")
+        //res.send("creating user")
         console.log("request body", req.body)
     
-        var nameFirst = req.body.nameFirst;
-        var nameLast = req.body.nameLast;
+        var firstName = req.body.FirstName;
+        var lastName = req.body.LastName;
         var email = req.body.email;
         var password = req.body.password;
     
-        if(!nameFirst || !nameLast || !email || !password){
+        if(!firstName || !lastName || !email || !password){
             return res.status(400).send("bad request")
         }
     
-        nameFirst = nameFirst.replace("'", "''")
-        nameLast = nameLast.replace("'", "''")
+        firstName = firstName.replace("'", "''")
+        lastName = lastName.replace("'", "''")
     
         var emailCheckQuery = `SELECT email
-        FROM customer
+        FROM Customer
         WHERE email ='${email}'`
     
         var existingUser = await db.executeQuery(emailCheckQuery)
     
-        // console.log("existing user", existingUser)
+        console.log("existing user", existingUser)
     
         if(existingUser[0]){
             return res.status(409).send("Please enter a different email.")
         }
     
         var hashedPassword = bcrypt.hashSync(password)
-        var insertQuery = `INSERT INTO customer(NameFirst, NameLast, email, password)
-        VALUES('${nameFirst}', '${nameLast}', '${email}', '${hashedPassword}')`
+        var insertQuery = `INSERT INTO Customer(FirstName, LastName, email, password)
+        VALUES('${firstName}', '${lastName}', '${email}', '${hashedPassword}')`
         db.executeQuery(insertQuery)
         .then(()=>{res.status(201).send()})
         .catch((err)=>{
@@ -149,15 +164,17 @@ app.get("/products", (req,res)=>{
     })
 })
 
-app.get("/products/SKU", (req,res)=>{
+app.get("/products/:SKU", (req,res)=>{
     var SKU = req.params.SKU
-    // console.log("my SKU:" + pk)
+    // console.log("my SKU:" + SKU)
 
     var myQuery = `SELECT *
     FROM Product
     LEFT JOIN Order
     ON Product.ProductSKU = Order.ProductSKU
     WHERE ProductSKU = ${SKU}`
+
+    console.log(myQuery)
 
     db.executeQuery(myQuery)
     .then((products)=>{
