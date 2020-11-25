@@ -17,21 +17,18 @@ app.use(cors());
 
 app.get('/customer/me', auth, (req,res)=>{
     res.send(req.customer)
+})
 
-    // var firstName = req.body.FirstName
-    // var lastName = req.body.LastName
-    // var email= req.body.email;
-    // var password = req.body.password;
-    
-    // if(!firstName || !lastName || !email || !password){res.status(400).send("bad request")}
-
-    // res.send("response")
+//if a user wants to edit their reviews
+app.patch("/orderr/:pk", auth, async(req,res)=>{
+    let reviewPK = req.params.pk
+    //make sure that the user can only edit their own reviews!
 })
 
 app.post('/customer/logout', auth, (req,res) => {
     var query = `UPDATE Customer
     SET Token = NULL 
-    WHERE ContactPK = ${req.contact.ContactPK}`
+    WHERE CustomerPK = ${req.contact.CustomerPK}`
 
     db.executeQuery(query)
     .then(()=>{res.status(200).send()})
@@ -152,9 +149,9 @@ app.post("/customer/login", async (req, res)=>{
 app.get("/products", (req,res)=>{
     //get data from database
     db.executeQuery(`SELECT *
-         FROM Product
-         LEFT JOIN Order 
-         ON Product.ProductSKU = Order.ProductSKU`)
+    FROM Product
+    LEFT JOIN Orderr 
+    ON Product.ProductSKU = Orderr.ProductSKU`)
     .then((result)=>{
         res.status(200).send(result)
     })
@@ -164,14 +161,44 @@ app.get("/products", (req,res)=>{
     })
 })
 
+app.post("/orderr", auth, async (req,res)=>{
+
+    try{
+    var orderPK = req.body.OrderPK;
+    var customerFK = req.body.CustomerFK;
+    var productSKU = req.body.ProductSKU;
+    var quantity = req.body.Quantity;
+
+    if(!orderPK || !productSKU || !quantity){res.status(400).send("bad request")}
+
+
+    console.log("here is the contact in /orderr", req.customer)
+    // res.send("here is your response")
+
+    let insertQuery = `INSERT INTO Orderr(OrderPK, CustomerFK, ProductSKU, Quantity)
+    OUTPUT inserted.OrderPK, inserted.CustomerFK, inserted.ProductSKU, inserted.Quantity
+    VALUES(${req.Customer.customerPK}, ${productSKU}, ${quantity})`
+
+    let insertedReview = await db.executeQuery(insertQuery)
+// console.log(insertedReview)
+    res.status(201).send(insertedReview[0])
+}
+
+    catch(error){
+        console.log("error in POST /review", error)
+        res.status(500).send()
+    }
+})
+
+
 app.get("/products/:SKU", (req,res)=>{
     var SKU = req.params.SKU
-    // console.log("my SKU:" + SKU)
+    console.log("my SKU:" + SKU)
 
     var myQuery = `SELECT *
     FROM Product
-    LEFT JOIN Order
-    ON Product.ProductSKU = Order.ProductSKU
+    LEFT JOIN Orderr
+    ON Product.ProductSKU = Orderr.ProductSKU
     WHERE ProductSKU = ${SKU}`
 
     console.log(myQuery)
@@ -192,5 +219,4 @@ app.get("/products/:SKU", (req,res)=>{
 })
 
 const PORT = process.env.PORT || 5000
-app.listen(PORT,()=>{console.log(`app is running on port ${PORT}`)})
-
+app.listen(PORT, ()=>{console.log(`app is running on port ${PORT}`)})
