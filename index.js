@@ -19,16 +19,16 @@ app.get('/customer/me', auth, (req,res)=>{
     res.send(req.customer)
 })
 
-//if a user wants to edit their reviews
+//if a user wants to edit their orders
 app.patch("/orderr/:pk", auth, async(req,res)=>{
     let reviewPK = req.params.pk
-    //make sure that the user can only edit their own reviews!
+    //make sure that the user can only edit their own orders!
 })
 
 app.post('/customer/logout', auth, (req,res) => {
     var query = `UPDATE Customer
     SET Token = NULL 
-    WHERE CustomerPK = ${req.contact.CustomerPK}`
+    WHERE CustomerPK = ${req.customer.CustomerPK}`
 
     db.executeQuery(query)
     .then(()=>{res.status(200).send()})
@@ -38,7 +38,7 @@ app.post('/customer/logout', auth, (req,res) => {
 })
 
 app.post("/customer/login", async (req, res)=>{
-    //  console.log(req.body)
+    console.log(req.body)
     
     var email= req.body.email;
     var password = req.body.password;
@@ -62,7 +62,7 @@ app.post("/customer/login", async (req, res)=>{
         return res.status(500).send()
     }
     
-    // console.log(result)
+    console.log(result)
     
     if(!result[0]){return res.status(400).send('invalid user credentials')}
     
@@ -79,7 +79,7 @@ app.post("/customer/login", async (req, res)=>{
     //3. generate a token
     
     let token = jwt.sign({pk: user.CustomerPK}, config.JWT, {expiresIn: '60 minutes'})
-    // console.log(token)
+    console.log(token)
     
     //4. save token in db and send token and user info back to user
     let setTokenQuery = `UPDATE Customer
@@ -107,7 +107,7 @@ app.post("/customer/login", async (req, res)=>{
     })
     
     app.post("/customer", async(req,res)=>{
-        //res.send("creating user")
+        // res.send("creating user")
         console.log("request body", req.body)
     
         var firstName = req.body.FirstName;
@@ -165,14 +165,14 @@ app.post("/orderr", auth, async (req,res)=>{
 
     try{
     var orderPK = req.body.OrderPK;
-    var customerFK = req.body.CustomerFK;
+    // var customerFK = req.body.CustomerFK;
     var productSKU = req.body.ProductSKU;
     var quantity = req.body.Quantity;
 
     if(!orderPK || !productSKU || !quantity){res.status(400).send("bad request")}
 
 
-    console.log("here is the contact in /orderr", req.customer)
+    console.log("here is the customer in /orderr", req.customer)
     // res.send("here is your response")
 
     let insertQuery = `INSERT INTO Orderr(OrderPK, CustomerFK, ProductSKU, Quantity)
